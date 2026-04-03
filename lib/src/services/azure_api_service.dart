@@ -73,6 +73,8 @@ abstract class AzureApiService {
 
   String get basePath;
 
+  String get baseUrl;
+
   List<GraphUser> get allUsers;
 
   /// Work item types for each project
@@ -96,6 +98,8 @@ abstract class AzureApiService {
   Future<LoginStatus> login(String accessToken);
 
   Future<void> setOrganization(String org);
+
+  Future<void> setBaseUrl(String url);
 
   void switchOrganization(String org);
 
@@ -402,15 +406,24 @@ class AzureApiServiceImpl with AppLogger implements AzureApiService {
 
   String _accessToken = '';
 
+  static const _defaultBaseUrl = 'https://dev.azure.com';
+
+  String _baseUrl = _defaultBaseUrl;
+
+  @override
+  String get baseUrl => _baseUrl;
+
   @override
   UserMe? get user => _user;
   UserMe? _user;
 
   @override
   String get basePath => _basePath;
-  String get _basePath => 'https://dev.azure.com/$_organization';
+  String get _basePath => '$_baseUrl/$_organization';
 
-  String get _usersBasePath => 'https://vssps.dev.azure.com';
+  String get _usersBasePath => _baseUrl == _defaultBaseUrl ? 'https://vssps.dev.azure.com' : _baseUrl;
+
+  String get _vsaexBasePath => _baseUrl == _defaultBaseUrl ? 'https://vsaex.dev.azure.com' : _baseUrl;
 
   String get _apiVersion => 'api-version=7.0';
 
@@ -641,6 +654,11 @@ class AzureApiServiceImpl with AppLogger implements AzureApiService {
       if (newToken != null) _accessToken = newToken;
     }
 
+    final storedBaseUrl = storage.getBaseUrl();
+    if (storedBaseUrl.isNotEmpty) {
+      _baseUrl = storedBaseUrl;
+    }
+
     var profileEndpoint = '$_usersBasePath/_apis/profile/profiles/me?$_apiVersion-preview';
 
     _organization = storage.getOrganization();
@@ -691,6 +709,22 @@ class AzureApiServiceImpl with AppLogger implements AzureApiService {
     storage.setOrganization(_organization);
 
     if (user != null) unawaited(_getUsers());
+  }
+
+  @override
+  Future<void> setBaseUrl(String url) async {
+    final trimmed = url.trim().replaceAll(RegExp(r'/+$'), '');
+    if (trimmed.isEmpty) {
+      _baseUrl = _defaultBaseUrl;
+      storage.setBaseUrl('');
+      return;
+    }
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || !uri.hasScheme || (!uri.scheme.startsWith('http'))) {
+      throw ArgumentError('Invalid URL: must start with http:// or https://');
+    }
+    _baseUrl = trimmed;
+    storage.setBaseUrl(_baseUrl);
   }
 
   @override
@@ -1450,7 +1484,7 @@ class AzureApiServiceImpl with AppLogger implements AzureApiService {
       for (final creator in creators) {
         final creatorSearch = "&\$filter=name eq '${creator.mailAddress}'";
         final entitlementRes = await _get(
-          'https://vsaex.dev.azure.com/$_organization/_apis/userentitlements?$_apiVersion$creatorSearch',
+          '${_vsaexBasePath}/$_organization/_apis/userentitlements?$_apiVersion$creatorSearch',
         );
         if (entitlementRes.isError) continue;
 

@@ -49,6 +49,12 @@ class AzureApiServiceMock implements AzureApiService {
   String get basePath => 'https://dev.azure.com/organization';
 
   @override
+  String get baseUrl => 'https://dev.azure.com';
+
+  @override
+  Future<void> setBaseUrl(String url) async {}
+
+  @override
   List<GraphUser> get allUsers => [];
 
   @override
