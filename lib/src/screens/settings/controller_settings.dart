@@ -214,39 +214,44 @@ class _SettingsController with ShareMixin, AppLogger {
   Future<void> setCustomUrl() async {
     var customUrl = api.baseUrl == 'https://dev.azure.com' ? '' : api.baseUrl;
     var confirmed = false;
+    final formKey = GlobalKey<FormState>();
 
     await OverlayService.bottomsheet(
       title: 'Custom Azure DevOps URL',
       isScrollControlled: true,
-      builder: (context) => Column(
-        children: [
-          DevOpsFormField(
-            label: 'Base URL',
-            hint: 'https://dev.azure.com',
-            initialValue: customUrl,
-            onChanged: (s) => customUrl = s,
-            maxLines: 1,
-            validator: (s) {
-              if (s == null || s.isEmpty) return null;
-              final uri = Uri.tryParse(s);
-              if (uri == null || !uri.hasScheme) return 'Enter a valid URL';
-              return null;
-            },
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Leave empty to use the default Azure DevOps URL (dev.azure.com).',
-            style: context.textTheme.labelSmall!.copyWith(color: context.colorScheme.onSecondary),
-          ),
-          const SizedBox(height: 40),
-          LoadingButton(
-            onPressed: () {
-              confirmed = true;
-              AppRouter.pop();
-            },
-            text: 'Save',
-          ),
-        ],
+      builder: (context) => Form(
+        key: formKey,
+        child: Column(
+          children: [
+            DevOpsFormField(
+              label: 'Base URL',
+              hint: 'https://dev.azure.com',
+              initialValue: customUrl,
+              onChanged: (s) => customUrl = s,
+              maxLines: 1,
+              validator: (s) {
+                if (s == null || s.isEmpty) return null;
+                final uri = Uri.tryParse(s);
+                if (uri == null || !uri.hasScheme) return 'Enter a valid URL';
+                return null;
+              },
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Leave empty to use the default Azure DevOps URL (dev.azure.com).',
+              style: context.textTheme.labelSmall!.copyWith(color: context.colorScheme.onSecondary),
+            ),
+            const SizedBox(height: 40),
+            LoadingButton(
+              onPressed: () {
+                if (!formKey.currentState!.validate()) return;
+                confirmed = true;
+                AppRouter.pop();
+              },
+              text: 'Save',
+            ),
+          ],
+        ),
       ),
     );
 
