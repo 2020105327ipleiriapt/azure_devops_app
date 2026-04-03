@@ -162,6 +162,14 @@ class _SettingsScreen extends StatelessWidget {
           ),
           SectionHeader(text: 'App settings'),
           NavigationButton(
+            onTap: ctrl.setCustomUrl,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [Text('Custom URL'), Icon(DevOpsIcons.link)],
+            ),
+          ),
+          const SizedBox(height: 20),
+          NavigationButton(
             onTap: ctrl.logout,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

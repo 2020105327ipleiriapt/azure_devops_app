@@ -9,6 +9,9 @@ abstract class StorageService {
   String getOrganization();
   void setOrganization(String organization);
 
+  String getBaseUrl();
+  void setBaseUrl(String url);
+
   Iterable<Project> getChosenProjects();
   void setChosenProjects(Iterable<Project> projects);
 
@@ -79,6 +82,16 @@ class StorageServiceCore implements StorageService {
   @override
   void setOrganization(String organization) {
     _helper.setString(_Keys.org, organization);
+  }
+
+  @override
+  String getBaseUrl() {
+    return _helper.getString(_Keys.baseUrl) ?? '';
+  }
+
+  @override
+  void setBaseUrl(String url) {
+    _helper.setString(_Keys.baseUrl, url);
   }
 
   @override
@@ -364,6 +377,7 @@ class _Keys {
   static const filters = 'filters';
   static const shortcuts = 'shortcuts';
   static const hasSeenSubscriptionAddedBottomsheet = 'hasSeenSubscriptionAddedBottomsheet';
+  static const baseUrl = 'baseUrl';
 }
 
 class StorageServiceWidget extends InheritedWidget {
