@@ -423,6 +423,8 @@ class AzureApiServiceImpl with AppLogger implements AzureApiService {
 
   String get _usersBasePath => _baseUrl == _defaultBaseUrl ? 'https://vssps.dev.azure.com' : _baseUrl;
 
+  String get _vsaexBasePath => _baseUrl == _defaultBaseUrl ? 'https://vsaex.dev.azure.com' : _baseUrl;
+
   String get _apiVersion => 'api-version=7.0';
 
   @override
@@ -712,8 +714,17 @@ class AzureApiServiceImpl with AppLogger implements AzureApiService {
   @override
   Future<void> setBaseUrl(String url) async {
     final trimmed = url.trim().replaceAll(RegExp(r'/+$'), '');
-    _baseUrl = trimmed.isEmpty ? _defaultBaseUrl : trimmed;
-    storage.setBaseUrl(_baseUrl == _defaultBaseUrl ? '' : _baseUrl);
+    if (trimmed.isEmpty) {
+      _baseUrl = _defaultBaseUrl;
+      storage.setBaseUrl('');
+      return;
+    }
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || !uri.hasScheme || (!uri.scheme.startsWith('http'))) {
+      throw ArgumentError('Invalid URL: must start with http:// or https://');
+    }
+    _baseUrl = trimmed;
+    storage.setBaseUrl(_baseUrl);
   }
 
   @override
@@ -1473,7 +1484,7 @@ class AzureApiServiceImpl with AppLogger implements AzureApiService {
       for (final creator in creators) {
         final creatorSearch = "&\$filter=name eq '${creator.mailAddress}'";
         final entitlementRes = await _get(
-          '${_baseUrl == _defaultBaseUrl ? 'https://vsaex.dev.azure.com' : _baseUrl}/$_organization/_apis/userentitlements?$_apiVersion$creatorSearch',
+          '${_vsaexBasePath}/$_organization/_apis/userentitlements?$_apiVersion$creatorSearch',
         );
         if (entitlementRes.isError) continue;
 
